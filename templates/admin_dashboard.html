@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Ordering Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #f39c12;
+            --success-color: #2ecc71;
+            --warning-color: #e74c3c;
+            --info-color: #9b59b6;
+            --light-bg: #f5f7fa;
+            --dark-bg: #2c3e50;
+            --text-color: #333;
+            --light-text: #fff;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --card-bg: #fff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .filter-section {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .filter-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+
+        .filter-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .filter-container select {
+            padding: 10px 12px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            background-color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            width: 100%;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .filter-container select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1100px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .chart-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .chart-header h3 {
+            font-size: 18px;
+            color: var(--secondary-color);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .chart-body {
+            height: 300px;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .data-summary {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .summary-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .summary-card:nth-child(2) {
+            background: linear-gradient(135deg, var(--success-color), #27ae60);
+        }
+
+        .summary-card:nth-child(3) {
+            background: linear-gradient(135deg, var(--accent-color), #e67e22);
+        }
+
+        .summary-card:nth-child(4) {
+            background: linear-gradient(135deg, var(--info-color), #8e44ad);
+        }
+
+        .summary-card:nth-child(5) {
+            background: linear-gradient(135deg, var(--warning-color), #c0392b);
+        }
+
+        .summary-card:nth-child(6) {
+            background: linear-gradient(135deg, #16a085, #1abc9c);
+        }
+
+        .summary-card h4 {
+            font-size: 16px;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .summary-subtext {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .data-summary {
+                flex-direction: column;
+            }
+        }
+
+        footer {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        .stock-status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-low {
+            background-color: var(--warning-color);
+        }
+
+        .status-normal {
+            background-color: var(--success-color);
+        }
+
+        .status-high {
+            background-color: var(--info-color);
+        }
+
+        /* Hamburger Menu Styles */
+        .hamburger-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--light-text);
+            margin-right: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .sidenav {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            background-color: var(--dark-bg);
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+        }
+
+        .sidenav a {
+            padding: 15px 15px 15px 32px;
+            text-decoration: none;
+            font-size: 18px;
+            color: var(--light-text);
+            display: block;
+            transition: 0.3s;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidenav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .sidenav .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+            border-bottom: none;
+        }
+
+        .sidenav i {
+            margin-right: 10px;
+        }
+
+        /* Product Tables Styles */
+        .product-tables-section {
+            margin-bottom: 30px;
+        }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .table-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .table-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .table-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table-header h3 {
+            font-size: 18px;
+            color: var(--secondary-color);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .product-table th,
+        .product-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .product-table th {
+            background-color: rgba(52, 152, 219, 0.1);
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+
+        .product-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .empty-table-message {
+            text-align: center;
+            padding: 30px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .stock-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stock-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-low {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        .status-medium {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: #d35400;
+        }
+
+        .status-high {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+
+        @media screen and (max-height: 450px) {
+            .sidenav {padding-top: 15px;}
+            .sidenav a {font-size: 18px;}
+        }
+    </style>
+</head>
+<body>
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="{{ url_for('prediction') }}"><i class="fas fa-chart-line"></i> Order Prediction</a>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <span class="hamburger-icon" onclick="openNav()"><i class="fas fa-bars"></i></span>
+                <h1>Ordering Analytics Dashboard</h1>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="filter-section">
+            <h2>Filter Ordering Data</h2>
+            <div class="filter-container">
+                <select id="orderNumber"><option value="">All Order Numbers</option></select>
+                <select id="orderMonth"><option value="">All Months</option></select>
+                <select id="orderYear"><option value="">All Years</option></select>
+                <select id="productName"><option value="">All Products</option></select>
+                <select id="uom"><option value="">All UOMs</option></select>
+                <select id="category"><option value="">All Categories</option></select>
+                <select id="stockStatus"><option value="">All Stock Status</option></select>
+            </div>
+        </div>
+
+        <div class="data-summary">
+            <div class="summary-card">
+                <h4>Total Order Amount</h4>
+                <div id="totalSales" class="summary-value">₹0</div>
+                <div class="summary-subtext">Total value of all orders</div>
+            </div>
+            <div class="summary-card">
+                <h4>Total Orders</h4>
+                <div id="totalOrders" class="summary-value">0</div>
+                <div class="summary-subtext">Number of unique orders</div>
+            </div>
+            <div class="summary-card">
+                <h4>Unique Products</h4>
+                <div id="uniqueProducts" class="summary-value">0</div>
+                <div class="summary-subtext">Different products ordered</div>
+            </div>
+            <div class="summary-card">
+                <h4>Average Order Value</h4>
+                <div id="avgOrderValue" class="summary-value">₹0</div>
+                <div class="summary-subtext">Amount per order</div>
+            </div>
+            <div class="summary-card">
+                <h4>Total Quantity</h4>
+                <div id="totalQuantity" class="summary-value">0</div>
+                <div class="summary-subtext">Total units ordered</div>
+            </div>
+            <div class="summary-card">
+                <h4>Current Stock Value</h4>
+                <div id="totalStockValue" class="summary-value">₹0</div>
+                <div class="summary-subtext">Value of inventory</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Top 5 Products by Order Amount</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="topSalesChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Least 5 Products by Order Amount</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="leastSalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Monthly Ordering Trend</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="monthlySalesChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Category Distribution</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Stock Status Distribution</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="stockStatusChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Inventory Health Analysis</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="inventoryHealthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Product Tables Section -->
+        <div class="product-tables-section">
+            <h2 style="margin-bottom: 20px; color: var(--secondary-color);">Product Stock Status</h2>
+            <div class="tables-grid">
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Products with 20gm</h3>
+                    </div>
+                    <div class="table-body">
+                        <table class="product-table" id="products20gm">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Quantity in Stock</th>
+                                    <th>Stock Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Products with 5kg</h3>
+                    </div>
+                    <div class="table-body">
+                        <table class="product-table" id="products5kg">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Quantity in Stock</th>
+                                    <th>Stock Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Other Products</h3>
+                    </div>
+                    <div class="table-body">
+                        <table class="product-table" id="productsOther">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Quantity in Stock</th>
+                                    <th>Stock Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>MongoDB Ordering Dashboard © 2025 | Data refreshed: <span id="lastUpdated">Now</span></p>
+    </footer>
+
+    <script>
+        let allData = [];
+
+        function getMonthName(monthIndex) {
+            return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][monthIndex];
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        // Hamburger Menu Functions
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch("/api/data");
+                allData = await response.json();
+                
+                // Update last refreshed time
+                document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
+                
+                // Populate dropdowns
+                populateDropdown("orderNumber", [...new Set(allData.map(item => item["Order Number"]))]);
+                populateDropdown("orderMonth", [...new Set(allData.map(item => getMonthName(new Date(item["Order Date"]).getMonth())))]);
+                populateDropdown("orderYear", [...new Set(allData.map(item => new Date(item["Order Date"]).getFullYear()))]);
+                populateDropdown("productName", [...new Set(allData.map(item => item["Product Name"]))]);
+                populateDropdown("uom", [...new Set(allData.map(item => item["UOM"]))]);
+                populateDropdown("category", [...new Set(allData.map(item => item["Category"] || "Uncategorized"))]);
+                populateDropdown("stockStatus", [...new Set(allData.map(item => item["Stock Status"]))]);
+                
+                updateCharts();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Failed to load data. Please try again later.");
+            }
+        }
+
+        function populateDropdown(id, values) {
+            const dropdown = document.getElementById(id);
+            // Clear all options except the first one
+            while (dropdown.options.length > 1) {
+                dropdown.remove(1);
+            }
+            
+            values.sort((a, b) => {
+                if (typeof a === 'string' && typeof b === 'string') {
+                    return a.localeCompare(b);
+                }
+                return a - b;
+            }).forEach(value => {
+                const option = document.createElement("option");
+                option.textContent = value;
+                option.value = value;
+                dropdown.appendChild(option);
+            });
+            
+            dropdown.addEventListener("change", updateCharts);
+        }
+
+        function updateCharts() {
+            let filteredData = allData.filter(item => {
+                const orderDate = new Date(item["Order Date"]);
+                return (
+                    (!document.getElementById("orderNumber").value || item["Order Number"] === document.getElementById("orderNumber").value) &&
+                    (!document.getElementById("orderMonth").value || getMonthName(orderDate.getMonth()) == document.getElementById("orderMonth").value) &&
+                    (!document.getElementById("orderYear").value || orderDate.getFullYear() == document.getElementById("orderYear").value) &&
+                    (!document.getElementById("productName").value || item["Product Name"] === document.getElementById("productName").value) &&
+                    (!document.getElementById("uom").value || item["UOM"] === document.getElementById("uom").value) &&
+                    (!document.getElementById("category").value || (item["Category"] || "Uncategorized") === document.getElementById("category").value) &&
+                    (!document.getElementById("stockStatus").value || item["Stock Status"] === document.getElementById("stockStatus").value)
+                );
+            });
+            
+            updateSummaryCards(filteredData);
+            renderProductCharts(filteredData);
+            renderMonthlyChart(filteredData);
+            renderCategoryChart(filteredData);
+            renderStockStatusChart(filteredData);
+            renderInventoryHealthChart(filteredData);
+            
+            // Update product tables
+            updateProductTables(filteredData);
+        }
+        
+        // New function to update product tables based on filtered data
+        function updateProductTables(data) {
+            // Create unique product data with stock information
+            const uniqueProducts = {};
+            
+            data.forEach(item => {
+                const productName = item["Product Name"];
+                
+                // If we haven't processed this product yet, add it to our unique products
+                if (!uniqueProducts[productName]) {
+                    uniqueProducts[productName] = {
+                        name: productName,
+                        quantityInStock: item["Quantity in Stock"] || 0,
+                        stockStatus: item["Stock Status"] || "Unknown"
+                    };
+                }
+            });
+            
+            // Convert to array for easier filtering
+            const productsArray = Object.values(uniqueProducts);
+            
+            // Filter products by category
+            const products20gm = productsArray.filter(product => 
+                product.name.toLowerCase().includes("20gm") || 
+                product.name.toLowerCase().includes("20 gm"));
+                
+            const products5kg = productsArray.filter(product => 
+                product.name.toLowerCase().includes("5kg") || 
+                product.name.toLowerCase().includes("5 kg"));
+                
+            const productsOther = productsArray.filter(product => 
+                !(product.name.toLowerCase().includes("20gm") || 
+                product.name.toLowerCase().includes("20 gm") ||
+                product.name.toLowerCase().includes("5kg") || 
+                product.name.toLowerCase().includes("5 kg")));
+            
+            // Update tables
+            updateTable("products20gm", products20gm);
+            updateTable("products5kg", products5kg);
+            updateTable("productsOther", productsOther);
+        }
+        
+        function updateTable(tableId, products) {
+            const tableBody = document.querySelector(`#${tableId} tbody`);
+            tableBody.innerHTML = ""; // Clear existing rows
+            
+            if (products.length === 0) {
+                const emptyRow = document.createElement("tr");
+                const emptyCell = document.createElement("td");
+                emptyCell.colSpan = 3;
+                emptyCell.className = "empty-table-message";
+                emptyCell.textContent = "No products found in this category";
+                emptyRow.appendChild(emptyCell);
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                
+                // Product name cell
+                const nameCell = document.createElement("td");
+                nameCell.textContent = product.name;
+                row.appendChild(nameCell);
+                
+                // Quantity cell
+                const quantityCell = document.createElement("td");
+                quantityCell.textContent = product.quantityInStock;
+                row.appendChild(quantityCell);
+                
+                // Stock status cell
+                const statusCell = document.createElement("td");
+                const statusBadge = document.createElement("span");
+                statusBadge.textContent = product.stockStatus;
+                statusBadge.className = "stock-badge";
+                
+                // Apply different colors based on stock status
+                if (product.stockStatus === "Low") {
+                    statusBadge.classList.add("status-low");
+                } else if (product.stockStatus === "Medium") {
+                    statusBadge.classList.add("status-medium");
+                } else if (product.stockStatus === "High") {
+                    statusBadge.classList.add("status-high");
+                }
+                
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateSummaryCards(data) {
+            // Calculate total order amount
+            const totalSales = data.reduce((sum, item) => sum + item.Amount, 0);
+            document.getElementById("totalSales").textContent = formatCurrency(totalSales);
+            
+            // Calculate unique orders
+            const uniqueOrders = new Set(data.map(item => item["Order Number"])).size;
+            document.getElementById("totalOrders").textContent = uniqueOrders;
+            
+            // Calculate unique products
+            const uniqueProducts = new Set(data.map(item => item["Product Name"])).size;
+            document.getElementById("uniqueProducts").textContent = uniqueProducts;
+            
+            // Calculate average order value
+            const avgOrderValue = uniqueOrders > 0 ? totalSales / uniqueOrders : 0;
+            document.getElementById("avgOrderValue").textContent = formatCurrency(avgOrderValue);
+            
+            // Calculate total quantity
+            const totalQuantity = data.reduce((sum, item) => sum + item.Quantity, 0);
+            document.getElementById("totalQuantity").textContent = totalQuantity.toLocaleString();
+            
+            // Calculate total stock value
+            const totalStockValue = data.reduce((sum, item) => {
+                // Some items might not have stock value, so we check
+                return sum + (item["Stock Value"] || 0);
+            }, 0);
+            document.getElementById("totalStockValue").textContent = formatCurrency(totalStockValue);
+        }
+
+        function renderProductCharts(data) {
+            const productSales = {};
+            data.forEach(item => {
+                const productName = item["Product Name"];
+                productSales[productName] = (productSales[productName] || 0) + item.Amount;
+            });
+            
+            const productArray = Object.keys(productSales).map(productName => ({
+                productName: productName.length > 20 ? productName.substring(0, 20) + '...' : productName,
+                fullName: productName,
+                totalSales: productSales[productName]
+            }));
+            
+            const sortedProducts = productArray.sort((a, b) => b.totalSales - a.totalSales);
+            
+            renderChart("topSalesChart", sortedProducts.slice(0, 5), [
+                'rgba(52, 152, 219, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(32, 132, 199, 0.8)',
+                'rgba(42, 142, 209, 0.8)'
+            ]);
+            
+            renderChart("leastSalesChart", sortedProducts.slice(-5).reverse(), [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(245, 109, 122, 0.8)',
+                'rgba(235, 149, 54, 0.8)'
+            ]);
+        }
+
+        function renderChart(chartId, products, colorPalette) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window[chartId + "Instance"]) {
+                window[chartId + "Instance"].destroy();
+            }
+            
+            window[chartId + "Instance"] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: products.map(item => item.productName),
+                    datasets: [{
+                        label: 'Order Amount (₹)',
+                        data: products.map(item => item.totalSales),
+                        backgroundColor: colorPalette,
+                        borderColor: colorPalette.map(color => color.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    return products[index].fullName;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMonthlyChart(data) {
+            // Group data by month and year
+            const monthlySales = {};
+            
+            data.forEach(item => {
+                const orderDate = new Date(item["Order Date"]);
+                const monthYear = `${getMonthName(orderDate.getMonth())} ${orderDate.getFullYear()}`;
+                
+                if (!monthlySales[monthYear]) {
+                    monthlySales[monthYear] = {
+                        monthYear,
+                        totalSales: 0,
+                        orderCount: 0
+                    };
+                }
+                
+                monthlySales[monthYear].totalSales += item.Amount;
+                monthlySales[monthYear].orderCount += 1;
+            });
+            
+            // Convert to array and sort by date
+            const monthlyArray = Object.values(monthlySales);
+            monthlyArray.sort((a, b) => {
+                const [aMonth, aYear] = a.monthYear.split(' ');
+                const [bMonth, bYear] = b.monthYear.split(' ');
+                
+                const aDate = new Date(`${aMonth} 1, ${aYear}`);
+                const bDate = new Date(`${bMonth} 1, ${bYear}`);
+                
+                return aDate - bDate;
+            });
+            
+            const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.monthlySalesChartInstance) {
+                window.monthlySalesChartInstance.destroy();
+            }
+            
+            window.monthlySalesChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyArray.map(item => item.monthYear),
+                    datasets: [{
+                        label: 'Total Order Amount',
+                        data: monthlyArray.map(item => item.totalSales),
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Order Count',
+                        data: monthlyArray.map(item => item.orderCount),
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Order Amount (₹)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Order Count'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCategoryChart(data) {
+            // Group data by category
+            const categoryData = {};
+            
+            data.forEach(item => {
+                const category = item.Category || 'Uncategorized';
+                
+                if (!categoryData[category]) {
+                    categoryData[category] = {
+                        totalSales: 0,
+                        productCount: 0
+                    };
+                }
+                
+                categoryData[category].totalSales += item.Amount;
+            });
+            
+            // Count unique products per category
+            const uniqueProductsByCategory = {};
+            data.forEach(item => {
+                const category = item.Category || 'Uncategorized';
+                if (!uniqueProductsByCategory[category]) {
+                    uniqueProductsByCategory[category] = new Set();
+                }
+                uniqueProductsByCategory[category].add(item["Product Name"]);
+            });
+            
+            for (const category in uniqueProductsByCategory) {
+                categoryData[category].productCount = uniqueProductsByCategory[category].size;
+            }
+            
+            // Convert to array for chart
+            const categoryArray = Object.keys(categoryData).map(category => ({
+                category,
+                totalSales: categoryData[category].totalSales,
+                productCount: categoryData[category].productCount
+            }));
+            
+            // Sort by sales amount
+            categoryArray.sort((a, b) => b.totalSales - a.totalSales);
+            
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            if (window.categoryChartInstance) {
+                window.categoryChartInstance.destroy();
+            }
+            
+            const colorPalette = [
+                'rgba(52, 152, 219, 0.8)',
+                'rgba(155, 89, 182, 0.8)',
+                'rgba(52, 73, 94, 0.8)',
+                'rgba(22, 160, 133, 0.8)',
+                'rgba(39, 174, 96, 0.8)',
+                'rgba(241, 196, 15, 0.8)',
+                'rgba(230, 126, 34, 0.8)',
+                'rgba(231, 76, 60, 0.8)'
+            ];
+            
+            window.categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryArray.map(item => item.category),
+                    datasets: [{
+                        data: categoryArray.map(item => item.totalSales),
+                        backgroundColor: categoryArray.map((_, index) => colorPalette[index % colorPalette.length]),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const productCount = categoryArray[context.dataIndex].productCount;
+                                    return [
+                                        `${label}: ₹${value.toLocaleString()}`,
+                                        `Products: ${productCount}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStockStatusChart(data) {
+            // Get unique products and their latest stock status
+            const uniqueProducts = {};
+            data.forEach(item => {
+                const productName = item["Product Name"];
+                const stockStatus = item["Stock Status"];
+                
+                if (stockStatus) {
+                    uniqueProducts[productName] = stockStatus;
+                }
+            });
+            
+            // Count products by stock status
+            const stockStatusCount = {
+                'Low': 0,
+                'Medium': 0,
+                'High': 0,
+                'Unknown': 0
+            };
+            
+            for (const product in uniqueProducts) {
+                const status = uniqueProducts[product];
+                stockStatusCount[status] = (stockStatusCount[status] || 0) + 1;
+            }
+            
+            const ctx = document.getElementById('stockStatusChart').getContext('2d');
+            
+            if (window.stockStatusChartInstance) {
+                window.stockStatusChartInstance.destroy();
+            }
+            
+            const colors = {
+                'Low': 'rgba(231, 76, 60, 0.8)',
+                'Medium': 'rgba(241, 196, 15, 0.8)',
+                'High': 'rgba(46, 204, 113, 0.8)',
+                'Unknown': 'rgba(189, 195, 199, 0.8)'
+            };
+            
+            const statusData = Object.keys(stockStatusCount).filter(status => stockStatusCount[status] > 0);
+            
+            window.stockStatusChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: statusData,
+                    datasets: [{
+                        data: statusData.map(status => stockStatusCount[status]),
+                        backgroundColor: statusData.map(status => colors[status]),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} products (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderInventoryHealthChart(data) {
+            // Calculate inventory health metrics
+            const inventoryMetrics = {
+                lowStockItems: 0,
+                optimalStockItems: 0,
+                overstockItems: 0,
+                stockoutRisk: 0,
+                excessInventory: 0
+            };
+            
+            // Get unique products
+            const uniqueProducts = {};
+            data.forEach(item => {
+                const productName = item["Product Name"];
+                const stockStatus = item["Stock Status"];
+                const quantityInStock = item["Quantity in Stock"] || 0;
+                const reorderLevel = item["Reorder Level"] || 0;
+                
+                if (!uniqueProducts[productName]) {
+                    uniqueProducts[productName] = {
+                        stockStatus,
+                        quantityInStock,
+                        reorderLevel
+                    };
+                    
+                    // Count stock status
+                    if (stockStatus === 'Low') {
+                        inventoryMetrics.lowStockItems++;
+                        
+                        // If stock is below reorder level, it's at stockout risk
+                        if (quantityInStock < reorderLevel) {
+                            inventoryMetrics.stockoutRisk++;
+                        }
+                    } else if (stockStatus === 'Medium') {
+                        inventoryMetrics.optimalStockItems++;
+                    } else if (stockStatus === 'High') {
+                        inventoryMetrics.overstockItems++;
+                        
+                        // If stock is more than twice the reorder level, it's excess inventory
+                        if (reorderLevel > 0 && quantityInStock > reorderLevel * 2) {
+                            inventoryMetrics.excessInventory++;
+                        }
+                    }
+                }
+            });
+            
+            const ctx = document.getElementById('inventoryHealthChart').getContext('2d');
+            
+            if (window.inventoryHealthChartInstance) {
+                window.inventoryHealthChartInstance.destroy();
+            }
+            
+            const metrics = [
+                {
+                    label: 'Low Stock Items',
+                    value: inventoryMetrics.lowStockItems,
+                    color: 'rgba(231, 76, 60, 0.8)'
+                },
+                {
+                    label: 'Optimal Stock',
+                    value: inventoryMetrics.optimalStockItems,
+                    color: 'rgba(46, 204, 113, 0.8)'
+                },
+                {
+                    label: 'Overstock Items',
+                    value: inventoryMetrics.overstockItems,
+                    color: 'rgba(241, 196, 15, 0.8)'
+                },
+                {
+                    label: 'Stockout Risk',
+                    value: inventoryMetrics.stockoutRisk,
+                    color: 'rgba(192, 57, 43, 0.8)'
+                },
+                {
+                    label: 'Excess Inventory',
+                    value: inventoryMetrics.excessInventory,
+                    color: 'rgba(243, 156, 18, 0.8)'
+                }
+            ];
+            
+            window.inventoryHealthChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: metrics.map(item => item.label),
+                    datasets: [{
+                        data: metrics.map(item => item.value),
+                        backgroundColor: metrics.map(item => item.color),
+                        borderColor: metrics.map(item => item.color.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.x || 0;
+                                    return `${context.label}: ${value} products`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Products'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            // Set last updated time
+            document.getElementById("lastUpdated").textContent = new Date().toLocaleString();
+            
+            // Fetch data
+            fetchData();
+            
+            // Set up refresh interval - fetch new data every 5 minutes
+            setInterval(fetchData, 5 * 60 * 1000);
+        });
+        </script>
+        </body>
+        </html>
