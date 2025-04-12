@@ -3,7 +3,7 @@ pymongo==4.5.0
 python-dotenv==1.0.0
 # Specify exact NumPy version that's compatible with your models
 numpy==1.24.3
-pandas==2.0.3
+pandas==2.2.2
 # Make sure statsmodels version is compatible with your NumPy version
 statsmodels==0.14.0
 joblib==1.3.2
