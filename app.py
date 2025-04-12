@@ -95,26 +95,21 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        if role == "admin":
-            # Static admin check
-            if (email == "dhaneshwar@email.com" and password == "Dhanesh#@21") or \
-               (email == "sujan@email.com" and password == "Sujan#@21"):
-                session["user"] = email
-                session["role"] = "admin"
+        user = users_collection.find_one({"email": email, "password": password, "role": role})
+
+        if user:
+            session["user"] = email
+            session["role"] = role
+
+            if role == "admin":
                 return redirect(url_for("admin_dashboard"))
             else:
-                flash("Invalid admin credentials.", "danger")
-        else:
-            # User login
-            user = users_collection.find_one({"email": email, "password": password, "role": "user"})
-            if user:
-                session["user"] = email
-                session["role"] = "user"
                 return redirect(url_for("user_dashboard"))
-            else:
-                flash("Invalid user credentials.", "danger")
+        else:
+            flash("Invalid credentials for selected role.", "danger")
 
     return render_template("login.html")
+
 
 
 @app.route("/signup", methods=["GET", "POST"])
