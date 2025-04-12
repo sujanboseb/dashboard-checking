@@ -1,9 +1,12 @@
 Flask==2.3.3
 pymongo==4.5.0
 python-dotenv==1.0.0
-pandas==2.0.3
+# Specify exact NumPy version that's compatible with your models
 numpy==1.24.3
+pandas==2.0.3
+# Make sure statsmodels version is compatible with your NumPy version
 statsmodels==0.14.0
 joblib==1.3.2
 gunicorn==21.2.0
 Werkzeug==2.3.7
+# Force reinstall of NumPy to ensure proper installation
