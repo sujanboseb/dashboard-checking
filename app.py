@@ -20,27 +20,28 @@ import string
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")  # Loaded from .env
+app.secret_key = os.getenv("SECRET_KEY", "default-secret-key-for-development")  # Loaded from .env
 
 # MongoDB connection
-raw_password = "sawq#@21"
+raw_password = os.getenv("MONGODB_PASSWORD", "sawq#@21")
 encoded_password = quote_plus(raw_password)
-uri = f"mongodb+srv://sujanboseplant04:{encoded_password}@cluster0.ea3ecul.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-client = MongoClient(uri)
+mongodb_uri = os.getenv("MONGODB_URI", f"mongodb+srv://sujanboseplant04:{encoded_password}@cluster0.ea3ecul.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient(mongodb_uri)
 db = client["investment"]
 users_collection = db["users"]
 collection = db["productpurchase"]
 otp_collection = db["otp"]  # Collection to store OTP information
 
 # Email configuration
-GMAIL_USER = os.getenv("GMAIL_USER", "your-email@gmail.com")  # Update your .env file
-GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD", "your-app-password")  # Use app password
+GMAIL_USER = os.getenv("GMAIL_USER", "your-email@gmail.com")
+GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD", "your-app-password")
 
-# Define paths to your saved models
+# Define paths to your saved models - Use relative paths for deployment
+# Models should be stored in a 'models' directory in your project
 MODEL_PATHS = {
-    '20g': 'C:\\Users\\Lenovo\\Desktop\\sarima_model_20gm.pkl',  # Update with your actual paths
-    '5kg': 'C:\\Users\\Lenovo\\Desktop\\sarima_model_5kg.pkl',
-    'others': 'C:\\Users\\Lenovo\\Desktop\\sarima_model_others.pkl'
+    '20g': os.path.join('models', 'sarima_model_20gm.pkl'),
+    '5kg': os.path.join('models', 'sarima_model_5kg.pkl'),
+    'others': os.path.join('models', 'sarima_model_others.pkl')
 }
 
 # Email validation regex
@@ -110,8 +111,6 @@ def login():
 
     return render_template("login.html")
 
-
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -128,7 +127,6 @@ def signup():
         return redirect(url_for("login"))
 
     return render_template("signup.html")
-
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
@@ -342,7 +340,6 @@ def logout():
     flash("Logged out successfully.", "success")
     return redirect(url_for("login"))
 
-# Updated prediction route
 @app.route("/prediction")
 def prediction():
     if "user" not in session or session["role"] != "admin":
@@ -565,5 +562,9 @@ def get_forecast():
         traceback_str = traceback.format_exc()
         return jsonify({"error": f"An error occurred: {str(e)}\n{traceback_str}"}), 500
 
+# Use environment variables for port with a fallback
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Get port from environment variable (Render sets this) or default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    # Run with host='0.0.0.0' to make the app accessible externally
+    app.run(host='0.0.0.0', port=port)
